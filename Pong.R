@@ -10,7 +10,7 @@ new_game <- function() {
       players <<- rbind(c(
         (str_split(as.character(name), pattern = " ")[[1]][1]),
         (str_split(as.character(name), pattern = " ")[[1]][2]),
-         player_number,
+        player_number,
         0))
       players <<- as.data.frame(players)
       player_number <- player_number + 1
@@ -22,7 +22,7 @@ new_game <- function() {
       players <<- rbind(players,c(
         (str_split(as.character(name), pattern = " ")[[1]][1]),
         (str_split(as.character(name), pattern = " ")[[1]][2]),
-         player_number,
+        player_number,
         0))
       player_number <- player_number + 1
       colnames(players) <<-
@@ -63,8 +63,8 @@ bracket_create <- function() {
       digits = 0)
   }
   bracket <<- data.frame(matrix(NA,
-                               nrow = ceiling(nrow(players)/2),
-                               ncol = num_rounds * 3))
+                                nrow = ceiling(nrow(players)/2),
+                                ncol = num_rounds * 3))
   colnames(bracket) <<- rep(c("Player 1", "Player 2", "Winner"), num_rounds)
   players <<- players %>% 
     mutate(Full_Name = str_c(First_Name, Last_Name, sep = " "))
@@ -72,20 +72,18 @@ bracket_create <- function() {
   bracket[1: (length(players$Full_Name) - length(bracket[,1])), 2] <<- players$Full_Name[! players$Full_Name %in% bracket[,1]]
 }
 
-winner <- function() {
-  round <- readline("What round was it? ")
-  game_num <- readline("What game was it? ")
+winner <- function(round, game) {
   winner <- readline("What player won? ")
   round <- as.numeric(round)
-  game_num <- as.numeric(game_num)
+  game <- as.numeric(game)
   winner <- as.numeric(winner)
   if (round == 1){
-    bracket[game_num, round * 3] <<- bracket[game_num, winner] 
+    bracket[game, round * 3] <<- bracket[game, winner] 
   } else {
     if (winner == 1) {
-      bracket[game_num, round * 3] <<- bracket[game_num, round * 3 - 2] 
+      bracket[game, round * 3] <<- bracket[game, round * 3 - 2] 
     } else {
-      bracket[game_num, round * 3] <<- bracket[game_num, round * 3 - 1] 
+      bracket[game, round * 3] <<- bracket[game, round * 3 - 1] 
     }
   }
 }
@@ -97,8 +95,7 @@ retain_bracket <- function() {
                                  paste(str_c(date, game, sep = "_")), ".csv")))
 }
 
-next_round <- function() {
-  new_round <- readline("What round will it be? ")
+next_round <- function(new_round) {
   new_round <- as.numeric(new_round)
   length_count <- length(bracket[which(bracket[, (new_round - 1) * 3] != is.na(bracket[, (new_round - 1) * 3])), new_round *3])
   ceiling_calc <- ceiling(length_count / 2)
@@ -113,9 +110,25 @@ next_round <- function() {
 play_tourney <- function() {
   new_game()
   bracket_create()
-  game <- 1
+  View(bracket)
+  game <<- 1
+  round <<- 1
   repeat {
-    winner()
-    if (game == length())
+    repeat {
+      winner(round, game)
+      game <<- game + 1
+      new_round <- readline("New round y or n? ")
+      if (new_round == 'y') {
+        break
+      }
+    }
+    round <<- round + 1
+    next_round(round)
+    game <<- 1
+    if (round == num_rounds) {
+      break
+    }
   }
+  winner(round, game)
+  retain_bracket()
 }
